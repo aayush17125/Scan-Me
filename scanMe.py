@@ -1,5 +1,8 @@
 import numpy as np
 import cv2
+from skimage.filters import threshold_local
+import imutils
+
 
 #Converting colot image to gray
 def color2gray(img):
@@ -19,6 +22,13 @@ def gaussianBlur(img,r=(5,5)):
 	blurred=cv2.GaussianBlur(img,r,0)  #(5,5) is the kernel size and 0 is sigma that determines the amount of blur
 	return blurred
 
+#using openCV canny edge detection
+def cannyEdge(img,minT,maxT):
+	edge=cv2.Canny(img,minT,maxT)  # minT and maxT are minimum and maximum threshold for edge detection
+	return edge 
+#using openCV for contour detection
+def  contour(img,):
+ 	pass
 
 #importing image
 image = cv2.imread("test_img.jpg")
@@ -30,22 +40,30 @@ image=cv2.resize(image,(1088,816))
 img = image.copy()
 
 #show original image
-cv2.imshow("Original",image)
+
 
 #using and showing the openCV Color to Gray
 gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-cv2.imshow("gray cv2",gray)
-	
+
 #using and showing the self-implemented Color to Gray
 img = color2gray(img)
-cv2.imshow("gray mine",img)
+
 
 #using gaussian blur openCV
 blur = gaussianBlur(img,r=(3,3))
-cv2.imshow("Gaussian Blur",blur)
 
 
+#using Canny edge detection openCV
+edge = cannyEdge(blur,minT=75,maxT=200)
 
+#view all images
+# cv2.imshow("Original",image)
+# cv2.imshow("gray cv2",gray)
+# cv2.imshow("gray mine",img)
+# cv2.imshow("Gaussian Blur",blur)
+cv2.imshow("Edge detection",edge)
 
 cv2.waitKey(0)
 cv2.destroyAllWindows()
+
+
