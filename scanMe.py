@@ -2,6 +2,8 @@ import numpy as np
 import cv2
 from skimage.filters import threshold_local
 import imutils
+from matplotlib import pyplot as plt
+# from pyimagesearch.transform import four_point_transform
 
 
 #Converting color image to gray
@@ -19,11 +21,13 @@ def color2gray(img):
 
 #using openCV gaussian blur
 def gaussianBlur(img,r=(5,5)):
+	# kernel = cv2.getGaussianKernel(ksize=5,sigma=0)
+	# print(kernel)
 	blurred=cv2.GaussianBlur(img,r,0)  #(5,5) is the kernel size and 0 is sigma that determines the amount of blur
 	return blurred
 
 #using openCV canny edge detection
-def cannyEdge(img,minT,maxT):
+def cannyEdge(img,minT=75,maxT=200):
 	edge=cv2.Canny(img,minT,maxT)  # minT and maxT are minimum and maximum threshold for edge detection
 	return edge 
 
@@ -66,8 +70,8 @@ def transformFourPoints(image, pts):   # reference : https://www.pyimagesearch.c
 if __name__=="__main__":
 
 	#importing image
-	image = cv2.imread("test.jpeg")
-	ratio = image.shape[0] / 500.0
+	image = cv2.imread("page.jpg")
+	ratio = image.shape[0]/500.0
 	orig = image.copy()
 	#resize to 1/3rd of original size so as to fit in screen :p
 	image= imutils.resize(image,height=500)
@@ -81,40 +85,46 @@ if __name__=="__main__":
 
 	#using gaussian blur openCV
 	blur = gaussianBlur(img,r=(5,5))
+	flag, thresh = cv2.threshold(blur, 120, 255, cv2.THRESH_BINARY)
 
-
-	#using Canny edge detection openCV
-	edge = cannyEdge(blur,minT=50,maxT=100)
-
-
+	# using Canny edge detection openCV
+	edge = cannyEdge(thresh,minT=50,maxT=100)
 	cnts = cv2.findContours(edge.copy(), cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
 	cnts = cnts[0]
-	cnts = sorted(cnts, key = cv2.contourArea, reverse = True)[:5]
+	# print(cnts[0])
+	cnts = sorted(cnts, key = cv2.contourArea, reverse = True)
+	cnts = cnts[:5]
 	for c in cnts:
-		peri = cv2.arcLength(c, True)
-		approx = cv2.approxPolyDP(c, 0.02 * peri, True)
+		perim = cv2.arcLength(c, True)
+		approx = cv2.approxPolyDP(c, 0.02 * perim, True)
 		if len(approx) == 4:
 			screenCnt = approx
 			break
-	# print("Finding contours of paper...")                        #Uncomment to see the contours of the input. Also uncomment the line with Outline in the View All images section
-	# cv2.drawContours(image, [screenCnt], -1, (0, 255, 0), 2)
+	print("Finding contours of paper...")                        #Uncomment to see the contours of the input. Also uncomment the line with Outline in the View All images section
+	cv2.drawContours(image, [screenCnt], -1, (0, 255, 0), 2)
+
+
+	
+	
+
+
 	print("Applying perspective transform...")
 	warped = transformFourPoints(orig, screenCnt.reshape(4, 2) * ratio)
 
-	warped = cv2.cvtColor(warped, cv2.COLOR_BGR2GRAY)
-	T = threshold_local(warped, 11, offset = 10, method = "gaussian")
-	warped = (warped > T).astype("uint8") * 255
+	warped = color2gray(warped)
+	# T = threshold_local(warped, 9, offset = 12, method = "gaussian")
+	# warped = (warped > T).astype("uint8") * 255
+	ret2,thresh = cv2.threshold(warped,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
+	denoised = cv2.fastNlMeansDenoising(thresh, 11, 31, 11)
 
 	#view all images
 	
-	cv2.imshow("Scanned", imutils.resize(warped, height = 650))
-	# cv2.imshow("Outline", image)
+	cv2.imshow("Scanned", imutils.resize(denoised, height = 1000))
+	cv2.imshow("Outline", image)
 	cv2.imshow("Edge detection",edge)
 	cv2.imshow("Gaussian Blur",blur)
 	cv2.imshow("gray",img)
-	cv2.imshow("Original",image)
+	cv2.imshow("Original",imutils.resize(orig,height=650))
 	
-
-
 	cv2.waitKey(0)
 	cv2.destroyAllWindows()
