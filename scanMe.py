@@ -21,9 +21,16 @@ def color2gray(img):
 
 #using openCV gaussian blur
 def gaussianBlur(img,r=(5,5)):
-	# kernel = cv2.getGaussianKernel(ksize=5,sigma=0)
-	# print(kernel)
+	kernel = cv2.getGaussianKernel(ksize=5,sigma=0)
+	print(kernel)
 	blurred=cv2.GaussianBlur(img,r,0)  #(5,5) is the kernel size and 0 is sigma that determines the amount of blur
+	print(blurred)
+	#self blur not working
+	filt = np.ones(r)
+	self_blurred = cv2.filter2D(img,-1,filt)
+	print(self_blurred)
+	
+
 	return blurred
 
 #using openCV canny edge detection
@@ -85,10 +92,10 @@ if __name__=="__main__":
 
 	#using gaussian blur openCV
 	blur = gaussianBlur(img,r=(5,5))
-	flag, thresh = cv2.threshold(blur, 120, 255, cv2.THRESH_BINARY)
+	flag, thresh1 = cv2.threshold(blur, 120, 255, cv2.THRESH_BINARY)
 
 	# using Canny edge detection openCV
-	edge = cannyEdge(thresh,minT=50,maxT=100)
+	edge = cannyEdge(thresh1,minT=50,maxT=100)
 	cnts = cv2.findContours(edge.copy(), cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
 	cnts = cnts[0]
 	# print(cnts[0])
@@ -122,6 +129,7 @@ if __name__=="__main__":
 	cv2.imshow("Scanned", imutils.resize(denoised, height = 1000))
 	cv2.imshow("Outline", image)
 	cv2.imshow("Edge detection",edge)
+	cv2.imshow("threshold", imutils.resize(thresh1,height=650))
 	cv2.imshow("Gaussian Blur",blur)
 	cv2.imshow("gray",img)
 	cv2.imshow("Original",imutils.resize(orig,height=650))
