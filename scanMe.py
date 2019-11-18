@@ -26,11 +26,10 @@ def gaussianBlur(img,r=(5,5)):
 	blurred=cv2.GaussianBlur(img,r,0)  #(5,5) is the kernel size and 0 is sigma that determines the amount of blur
 	print(blurred)
 	#self blur not working
-	filt = np.ones(r)
+	filt = (1.0/25.0)*np.ones(r)
 	self_blurred = cv2.filter2D(img,-1,filt)
 	print(self_blurred)
 	
-
 	return blurred
 
 #using openCV canny edge detection
@@ -77,7 +76,7 @@ def transformFourPoints(image, pts):   # reference : https://www.pyimagesearch.c
 if __name__=="__main__":
 
 	#importing image
-	image = cv2.imread("page.jpg")
+	image = cv2.imread("test.jpeg")
 	ratio = image.shape[0]/500.0
 	orig = image.copy()
 	#resize to 1/3rd of original size so as to fit in screen :p
