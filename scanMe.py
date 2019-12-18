@@ -4,6 +4,67 @@ from skimage.filters import threshold_local
 import imutils
 from matplotlib import pyplot as plt
 # from pyimagesearch.transform import four_point_transform
+img=0
+img1=0
+img2=0
+img3=0
+img4=0
+img5=0
+img6=0
+def changeimg(path):
+	global img1,img2,img3,img4,img5,img6
+	image = cv2.imread(path)
+	ratio = image.shape[0]/500.0
+	orig = image.copy()
+	#resize to 1/3rd of original size so as to fit in screen :p
+	image= imutils.resize(image,height=500)
+
+	#make a copy
+	img = image.copy()
+
+	#using and showing the self-implemented Color to Gray
+	img = color2gray(img)
+
+
+	#using gaussian blur openCV
+	blur = gaussianBlur(img,r=(5,5))
+	flag, thresh1 = cv2.threshold(blur, 120, 255, cv2.THRESH_BINARY)
+
+	# using Canny edge detection openCV
+	edge = cannyEdge(thresh1,minT=50,maxT=100)
+	try:
+		cnts = cv2.findContours(edge.copy(), cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
+		cnts = cnts[0]
+		# print(cnts[0])
+		cnts = sorted(cnts, key = cv2.contourArea, reverse = True)
+		cnts = cnts[:5]
+		for c in cnts:
+			perim = cv2.arcLength(c, True)
+			approx = cv2.approxPolyDP(c, 0.02 * perim, True)
+			if len(approx) == 4:
+				screenCnt = approx
+				break
+		print("Finding contours of paper...")                        #Uncomment to see the contours of the input. Also uncomment the line with Outline in the View All images section
+		cv2.drawContours(image, [screenCnt], -1, (0, 255, 0), 2)
+		print("Applying perspective transform...")
+		warped = transformFourPoints(orig, screenCnt.reshape(4, 2) * ratio)
+		warped = color2gray(warped)
+		# T = threshold_local(warped, 9, offset = 12, method = "gaussian")
+		# warped = (warped > T).astype("uint8") * 255
+		ret2,thresh = cv2.threshold(warped,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
+		denoised = cv2.fastNlMeansDenoising(thresh, 11, 31, 11)
+		#view all images
+		img6 = imutils.resize(denoised, height = 650)
+		print(img6.shape,'--'*50)
+		img5 =  image
+		img4 = edge
+		img3 = imutils.resize(thresh1,height=650)
+		img2 = blur
+		img1 = img
+	except Exception as e:
+		print('Error: ', e)
+		img5=cv2.imread("C:\\Users\\Sherlock\\Desktop\\Work\\5th Sem\\DIP\\Project\\Scan-Me-master\\error.jpg")
+
 
 
 #Converting color image to gray
@@ -26,19 +87,21 @@ def gaussianBlur(img,r=(5,5)):
 	blurred=cv2.GaussianBlur(img,r,0)  #(5,5) is the kernel size and 0 is sigma that determines the amount of blur
 	print(blurred)
 	#self blur not working
-	filt = (1.0/25.0)*np.ones(r)
+	filt = np.ones(r)
 	self_blurred = cv2.filter2D(img,-1,filt)
 	print(self_blurred)
 	
+
 	return blurred
 
 #using openCV canny edge detection
 def cannyEdge(img,minT=75,maxT=200):
 	edge=cv2.Canny(img,minT,maxT)  # minT and maxT are minimum and maximum threshold for edge detection
+	print(type(edge))
 	return edge 
 
 #Perspective transform
-def transformFourPoints(image, pts):   # reference : https://www.pyimagesearch.com/2014/08/25/4-point-opencv-getperspective-transform-example/
+def transformFourPoints(img,pts):   # reference : https://www.pyimagesearch.com/2014/08/25/4-point-opencv-getperspective-transform-example/
 
 	rect = np.zeros((4, 2), dtype="float32")
 
@@ -67,7 +130,7 @@ def transformFourPoints(image, pts):   # reference : https://www.pyimagesearch.c
 
 
 	M = cv2.getPerspectiveTransform(rect, dst)
-	warped = cv2.warpPerspective(image, M, (maxWidth, maxHeight))
+	warped = cv2.warpPerspective(img, M, (maxWidth, maxHeight))
 
 	return warped
 
@@ -76,7 +139,7 @@ def transformFourPoints(image, pts):   # reference : https://www.pyimagesearch.c
 if __name__=="__main__":
 
 	#importing image
-	image = cv2.imread("test.jpeg")
+	image = cv2.imread("page.jpg")
 	ratio = image.shape[0]/500.0
 	orig = image.copy()
 	#resize to 1/3rd of original size so as to fit in screen :p
@@ -122,7 +185,6 @@ if __name__=="__main__":
 	# warped = (warped > T).astype("uint8") * 255
 	ret2,thresh = cv2.threshold(warped,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
 	denoised = cv2.fastNlMeansDenoising(thresh, 11, 31, 11)
-
 	#view all images
 	
 	cv2.imshow("Scanned", imutils.resize(denoised, height = 1000))
