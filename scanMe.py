@@ -3,16 +3,17 @@ import cv2
 from skimage.filters import threshold_local
 import imutils
 from matplotlib import pyplot as plt
-# from pyimagesearch.transform import four_point_transform
 img=0
 img1=0
 img2=0
 img3=0
+
 img4=0
 img5=0
 img6=0
+img7=0
 def changeimg(path):
-	global img1,img2,img3,img4,img5,img6
+	global img1,img2,img3,img4,img5,img6,img7
 	image = cv2.imread(path)
 	ratio = image.shape[0]/500.0
 	orig = image.copy()
@@ -49,11 +50,13 @@ def changeimg(path):
 		print("Applying perspective transform...")
 		warped = transformFourPoints(orig, screenCnt.reshape(4, 2) * ratio)
 		warped = color2gray(warped)
-		# T = threshold_local(warped, 9, offset = 12, method = "gaussian")
-		# warped = (warped > T).astype("uint8") * 255
 		ret2,thresh = cv2.threshold(warped,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
-		denoised = cv2.fastNlMeansDenoising(thresh, 11, 31, 11)
 		#view all images
+		denoised = thresh
+		kernel = np.ones((2,2), np.uint8)
+		#erode
+		denoised = cv2.erode(denoised, kernel, iterations=1)
+		img7 = denoised
 		img6 = imutils.resize(denoised, height = 650)
 		print(img6.shape,'--'*50)
 		img5 =  image
@@ -64,8 +67,6 @@ def changeimg(path):
 	except Exception as e:
 		print('Error: ', e)
 		img5=cv2.imread("C:\\Users\\Sherlock\\Desktop\\Work\\5th Sem\\DIP\\Project\\Scan-Me-master\\error.jpg")
-
-
 
 #Converting color image to gray
 def color2gray(img):
@@ -139,7 +140,7 @@ def transformFourPoints(img,pts):   # reference : https://www.pyimagesearch.com/
 if __name__=="__main__":
 
 	#importing image
-	image = cv2.imread("page.jpg")
+	image = cv2.imread("test3.jpg")
 	ratio = image.shape[0]/500.0
 	orig = image.copy()
 	#resize to 1/3rd of original size so as to fit in screen :p
@@ -160,7 +161,6 @@ if __name__=="__main__":
 	edge = cannyEdge(thresh1,minT=50,maxT=100)
 	cnts = cv2.findContours(edge.copy(), cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
 	cnts = cnts[0]
-	# print(cnts[0])
 	cnts = sorted(cnts, key = cv2.contourArea, reverse = True)
 	cnts = cnts[:5]
 	for c in cnts:
@@ -181,10 +181,11 @@ if __name__=="__main__":
 	warped = transformFourPoints(orig, screenCnt.reshape(4, 2) * ratio)
 
 	warped = color2gray(warped)
-	# T = threshold_local(warped, 9, offset = 12, method = "gaussian")
-	# warped = (warped > T).astype("uint8") * 255
 	ret2,thresh = cv2.threshold(warped,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
-	denoised = cv2.fastNlMeansDenoising(thresh, 11, 31, 11)
+	denoised = thresh
+	kernel = np.ones((2,2), np.uint8) 
+	denoised = cv2.erode(denoised, kernel, iterations=1)
+	# denoised = cv2.dilate(denoised, kernel, iterations=1)
 	#view all images
 	
 	cv2.imshow("Scanned", imutils.resize(denoised, height = 1000))
